@@ -76,8 +76,8 @@ declare type CommentsState = {
 declare type Authorization = {
   channel_name: string,
   channel_id: string,
-  signature: string,
-  signing_ts: string,
+  signature?: string,
+  signing_ts?: string,
 };
 
 // ModAuthorization parameters for calls requiring creator/moderator authentication
@@ -316,4 +316,13 @@ declare type BlockWordParams = {
   signature: string,
   signing_ts: string,
   words: string, // CSV list of containing words to block comment on content
+};
+
+declare type ChannelStatusParams = {
+  MyChannels: Array<Authorization>,
+};
+
+declare type ChannelStatusResponse = {
+  Confirmed: Array<Authorization>,
+  UnConfirmed: Array<Authorization>,
 };
