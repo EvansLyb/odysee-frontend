@@ -11,7 +11,6 @@ import { parseURI, isURIValid } from 'util/lbryURI';
 import { SITE_TITLE, WELCOME_VERSION, SIMPLE_SITE } from 'config';
 import LoadingBarOneOff from 'component/loadingBarOneOff';
 import { GetLinksData } from 'util/buildHomepage';
-import { useKeycloak } from '@react-keycloak/web';
 import HomePage from 'page/home';
 
 // @if TARGET='app'
@@ -140,12 +139,12 @@ function PrivateRoute(props: PrivateRouteProps) {
   const { component: Component, isAuthenticated, ...rest } = props;
   const urlSearchParams = new URLSearchParams(props.location.search);
   const redirectUrl = urlSearchParams.get('redirect');
-  const { keycloak } = useKeycloak();
+
   return (
     <Route
       {...rest}
       render={(props) =>
-        (keycloak && keycloak.authenticated) || !IS_WEB ? (
+        isAuthenticated || !IS_WEB ? (
           <Component {...props} />
         ) : (
           <Redirect to={`/$/${PAGES.AUTH_SIGNIN}?redirect=${redirectUrl || props.location.pathname}`} />
