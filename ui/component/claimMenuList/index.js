@@ -1,25 +1,18 @@
 import { connect } from 'react-redux';
 import { selectClaimForUri, selectClaimIsMine } from 'redux/selectors/claims';
-import { doCollectionEdit, doFetchItemsInCollection } from 'redux/actions/collections';
+import { doCollectionEdit } from 'redux/actions/collections';
 import { doPrepareEdit } from 'redux/actions/publish';
-import {
-  makeSelectCollectionForIdHasClaimUrl,
-  makeSelectCollectionIsMine,
-  makeSelectEditedCollectionForId,
-  makeSelectUrlsForCollectionId,
-} from 'redux/selectors/collections';
+import { makeSelectCollectionForIdHasClaimUrl, makeSelectCollectionIsMine } from 'redux/selectors/collections';
 import * as COLLECTIONS_CONSTS from 'constants/collections';
 import { selectChannelIsMuted } from 'redux/selectors/blocked';
 import { doToggleMuteChannel } from 'redux/actions/blocked';
-import { doSetActiveChannel, doSetIncognito, doOpenModal } from 'redux/actions/app';
+import { doOpenModal } from 'redux/actions/app';
 import { doToggleBlockChannel, doToggleBlockChannelAsAdmin } from 'redux/actions/comments';
 import { selectHasAdminChannel, selectChannelIsBlocked, selectChannelIsAdminBlocked } from 'redux/selectors/comments';
 import { doToast } from 'redux/actions/notifications';
 import { doToggleSubscription } from 'redux/actions/subscriptions';
 import { selectIsSubscribedForUri } from 'redux/selectors/subscriptions';
 import { selectUserVerifiedEmail } from 'redux/selectors/user';
-import { selectListShuffle } from 'redux/selectors/content';
-import { doToggleShuffleList } from 'redux/actions/content';
 import { getChannelPermanentUrlFromClaim } from 'util/claim';
 import ClaimPreview from './view';
 
@@ -44,25 +37,18 @@ const select = (state, props) => {
     channelIsAdminBlocked: selectChannelIsAdminBlocked(state, channelUrl),
     isAdmin: selectHasAdminChannel(state),
     isMyCollection: makeSelectCollectionIsMine(collectionClaimId)(state),
-    editedCollection: makeSelectEditedCollectionForId(collectionClaimId)(state),
     isAuthenticated: Boolean(selectUserVerifiedEmail(state)),
-    resolvedList: makeSelectUrlsForCollectionId(collectionClaimId)(state),
-    shuffleList: selectListShuffle(state),
   };
 };
 
 const perform = {
   doCollectionEdit,
-  doFetchItemsInCollection,
   doOpenModal,
   doPrepareEdit,
-  doSetActiveChannel,
-  doSetIncognito,
   doToast,
   doToggleBlockChannel,
   doToggleBlockChannelAsAdmin,
   doToggleMuteChannel,
-  doToggleShuffleList,
   doToggleSubscription,
 };
 
