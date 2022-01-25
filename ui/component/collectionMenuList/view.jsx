@@ -1,30 +1,33 @@
 // @flow
-import * as ICONS from 'constants/icons';
-import * as MODALS from 'constants/modal_types';
-import React from 'react';
-import classnames from 'classnames';
-import { Menu, MenuButton, MenuList } from '@reach/menu-button';
-import MenuLink from 'component/common/menu-link';
-import MenuItem from 'component/common/menu-item';
-import Icon from 'component/common/icon';
-import * as PAGES from 'constants/pages';
-import { useHistory } from 'react-router';
 import { formatLbryUrlForWeb, generateListSearchUrlParams } from 'util/url';
+import { Menu, MenuButton, MenuList } from '@reach/menu-button';
+import { useHistory } from 'react-router';
+import * as ICONS from 'constants/icons';
+import * as PAGES from 'constants/pages';
+import * as MODALS from 'constants/modal_types';
+import classnames from 'classnames';
+import Icon from 'component/common/icon';
+import MenuItem from 'component/common/menu-item';
+import MenuLink from 'component/common/menu-link';
+import React from 'react';
 
 type Props = {
-  inline?: boolean,
-  doOpenModal: (string, {}) => void,
-  collectionName?: string,
   collectionId: string,
-  playNextUri: string,
-  doToggleShuffleList: (string) => void,
+  inline?: boolean,
+  shuffleList?: any,
+  doOpenModal: (id: string, params: any) => void,
+  doToggleShuffleList: (currentUri?: string, collectionId: string, shuffle: boolean, hideToast: boolean) => void,
 };
 
 function CollectionMenuList(props: Props) {
-  const { inline = false, collectionId, collectionName, doOpenModal, playNextUri, doToggleShuffleList } = props;
-  const [doShuffle, setDoShuffle] = React.useState(false);
+  const { collectionId, inline = false, shuffleList, doOpenModal, doToggleShuffleList } = props;
 
   const { push } = useHistory();
+
+  const [doShuffle, setDoShuffle] = React.useState(false);
+
+  const shuffle = shuffleList && shuffleList.collectionId === collectionId && shuffleList.newUrls;
+  const playNextUri = shuffle && shuffle[0];
 
   React.useEffect(() => {
     if (playNextUri && doShuffle) {
@@ -49,14 +52,15 @@ function CollectionMenuList(props: Props) {
       >
         <Icon size={20} icon={ICONS.MORE_VERTICAL} />
       </MenuButton>
+
       <MenuList className="menu__list">
-        {collectionId && collectionName && (
+        {collectionId && (
           <>
             <MenuLink page={`${PAGES.LIST}/${collectionId}`} icon={ICONS.VIEW} label={__('View List')} />
 
             <MenuItem
               onSelect={() => {
-                doToggleShuffleList(collectionId);
+                doToggleShuffleList(undefined, collectionId, true, true);
                 setDoShuffle(true);
               }}
               icon={ICONS.SHUFFLE}
