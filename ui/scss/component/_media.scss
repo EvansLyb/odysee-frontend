@@ -73,25 +73,37 @@
   }
 }
 
-.media__info-text--contracted {
-  margin-top: var(--spacing-m);
-  max-height: 5rem;
-  overflow: hidden;
-}
-
 .media__info-text--expanded {
   margin-top: var(--spacing-m);
-  max-height: auto;
-}
-
-.media__info-text--contracted,
-.media__info-text--expanded {
   max-width: 50rem;
+  max-height: auto;
+
+  @media (max-width: $breakpoint-small) {
+    margin-top: 0px;
+  }
+}
+
+.media__info-text--contracted {
+  @extend .media__info-text--expanded;
+  overflow: hidden;
+
+  .mediaInfo__description {
+    max-height: 5rem;
+  }
+}
+
+@media (max-width: $breakpoint-small) {
+  .mediaInfo__description {
+    margin-top: var(--spacing-s);
+  }
 }
 
 .media__info-text--fade {
-  -webkit-mask-image: -webkit-gradient(linear, left 55%, left bottom, from(rgba(0, 0, 0, 1)), to(rgba(0, 0, 0, 0)));
   overflow-wrap: anywhere;
+
+  // both needed for compatibility
+  -webkit-mask-image: -webkit-gradient(linear, left 55%, left bottom, from(rgba(0, 0, 0, 1)), to(rgba(0, 0, 0, 0)));
+  mask-image: -webkit-gradient(linear, left 55%, left bottom, from(rgba(0, 0, 0, 1)), to(rgba(0, 0, 0, 0)));
 }
 
 .media__info-expand {
@@ -118,11 +130,39 @@
   }
 
   @media (max-width: $breakpoint-small) {
-    padding-top: var(--spacing-s);
+    justify-content: space-around !important;
+    margin: 0;
+    padding: 0;
 
-    > * {
-      margin-right: var(--spacing-s);
-      margin-bottom: var(--spacing-s);
+    div {
+      margin: 0 !important;
+    }
+
+    .button--file-action {
+      margin: 0 !important;
+      padding: var(--spacing-xxs);
+      width: 3.1rem;
+      height: 3.5rem;
+
+      .button__content {
+        flex-direction: column;
+        justify-content: space-between;
+
+        .button__label {
+          margin: 0;
+          margin-top: var(--spacing-xxs);
+          font-size: var(--font-xxsmall);
+        }
+      }
+    }
+
+    .button--file-action--menu {
+      width: unset;
+      height: 2rem;
+    }
+
+    .icon--Plus {
+      top: -2px;
     }
   }
 }

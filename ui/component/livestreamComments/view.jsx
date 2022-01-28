@@ -11,10 +11,11 @@ type Props = {
   commentsToDisplay: Array<Comment>,
   fetchingComments: boolean,
   uri: string,
+  isMobile?: boolean,
 };
 
 export default function LivestreamComments(props: Props) {
-  const { commentsToDisplay, fetchingComments, uri } = props;
+  const { commentsToDisplay, fetchingComments, uri, isMobile } = props;
 
   const [forceUpdate, setForceUpdate] = React.useState(0);
 
@@ -45,9 +46,18 @@ export default function LivestreamComments(props: Props) {
   if (!fetchingComments && commentsToDisplay && commentsToDisplay.length > 0) {
     return (
       <div className="livestream__comments">
-        {commentsToDisplay.map((comment) => (
-          <LivestreamComment comment={comment} key={comment.comment_id} uri={uri} forceUpdate={forceUpdate} />
-        ))}
+        {commentsToDisplay
+          .slice(0)
+          .reverse()
+          .map((comment) => (
+            <LivestreamComment
+              comment={comment}
+              key={comment.comment_id}
+              uri={uri}
+              forceUpdate={forceUpdate}
+              isMobile={isMobile}
+            />
+          ))}
       </div>
     );
   }

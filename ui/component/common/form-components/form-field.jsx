@@ -15,6 +15,7 @@ import type { ElementRef, Node } from 'react';
 const TextareaWithSuggestions = lazyImport(() => import('component/textareaWithSuggestions' /* webpackChunkName: "suggestions" */));
 
 type Props = {
+  uri?: string,
   affixClass?: string, // class applied to prefix/postfix label
   autoFocus?: boolean,
   blockWrap: boolean,
@@ -47,6 +48,8 @@ type Props = {
   openEmoteMenu?: () => void,
   quickActionHandler?: (any) => any,
   render?: () => React$Node,
+  handleTip?: (isLBC: boolean) => any,
+  handleSubmit?: () => any,
 };
 
 export class FormField extends React.PureComponent<Props> {
@@ -68,6 +71,7 @@ export class FormField extends React.PureComponent<Props> {
 
   render() {
     const {
+      uri,
       affixClass,
       autoFocus,
       blockWrap,
@@ -91,6 +95,8 @@ export class FormField extends React.PureComponent<Props> {
       openEmoteMenu,
       quickActionHandler,
       render,
+      handleTip,
+      handleSubmit,
       ...inputProps
     } = this.props;
 
@@ -237,7 +243,7 @@ export class FormField extends React.PureComponent<Props> {
               {(label || quickAction) && (
                 <div className="form-field__two-column">
                   <label htmlFor={name}>{label}</label>
-                  {quickAction}
+                  {countInfo}
                 </div>
               )}
 
@@ -252,11 +258,15 @@ export class FormField extends React.PureComponent<Props> {
               ) : (
                 <React.Suspense fallback={null}>
                   <TextareaWithSuggestions
+                    uri={uri}
                     type={type}
                     id={name}
                     maxLength={textAreaMaxLength || FF_MAX_CHARS_DEFAULT}
                     inputRef={this.input}
                     isLivestream={isLivestream}
+                    handleEmojis={openEmoteMenu}
+                    handleTip={handleTip}
+                    handleSubmit={handleSubmit}
                     {...inputProps}
                   />
                 </React.Suspense>
@@ -273,7 +283,6 @@ export class FormField extends React.PureComponent<Props> {
                     iconSize={20}
                   />
                 )}
-                {countInfo}
               </div>
             </fieldset-section>
           );

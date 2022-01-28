@@ -2,6 +2,9 @@
 import { EMOTES_48px as EMOTES } from 'constants/emotes';
 import { matchSorter } from 'match-sorter';
 import { SEARCH_OPTIONS } from 'constants/search';
+import { parseURI } from 'util/lbryURI';
+import { useIsMobile } from 'effects/use-screensize';
+import * as ICONS from 'constants/icons';
 import * as KEYCODES from 'constants/keycodes';
 import Autocomplete from '@mui/material/Autocomplete';
 import BusyIndicator from 'component/common/busy-indicator';
@@ -14,6 +17,7 @@ import TextareaSuggestionsItem from 'component/textareaSuggestionsItem';
 import TextField from '@mui/material/TextField';
 import useLighthouse from 'effects/use-lighthouse';
 import useThrottle from 'effects/use-throttle';
+import Button from 'component/button';
 
 const SUGGESTION_REGEX = new RegExp(
   '((?:^| |\n)@[^\\s=&#$@%?:;/\\"<>%{}|^~[]*(?::[\\w]+)?)|((?:^| |\n):[\\w+-]*:?)',
@@ -62,6 +66,9 @@ type Props = {
   onBlur: (any) => any,
   onChange: (any) => any,
   onFocus: (any) => any,
+  handleEmojis: () => any,
+  handleTip: (isLBC: boolean) => any,
+  handleSubmit: () => any,
 };
 
 export default function TextareaWithSuggestions(props: Props) {
@@ -89,7 +96,12 @@ export default function TextareaWithSuggestions(props: Props) {
     onBlur,
     onChange,
     onFocus,
+    handleEmojis,
+    handleTip,
+    handleSubmit,
   } = props;
+
+  const isMobile = useIsMobile();
 
   const inputDefaultProps = { className, placeholder, maxLength, type, disabled };
 
@@ -102,7 +114,15 @@ export default function TextareaWithSuggestions(props: Props) {
   const suggestionTerm = suggestionValue && suggestionValue.term;
   const isEmote = suggestionValue && suggestionValue.isEmote;
   const isMention = suggestionValue && !suggestionValue.isEmote;
-  const invalidTerm = suggestionTerm && isMention && suggestionTerm.charAt(1) === ':';
+
+  let invalidTerm = suggestionTerm && isMention && suggestionTerm.charAt(1) === ':';
+  if (isMention && suggestionTerm) {
+    try {
+      parseURI(suggestionTerm);
+    } catch (error) {
+      invalidTerm = true;
+    }
+  }
 
   const additionalOptions = { isBackgroundSearch: false, [SEARCH_OPTIONS.CLAIM_TYPE]: SEARCH_OPTIONS.INCLUDE_CHANNELS };
   const { results, loading } = useLighthouse(debouncedTerm, showMature, SEARCH_SIZE, additionalOptions, 0);
@@ -369,10 +389,29 @@ export default function TextareaWithSuggestions(props: Props) {
 
   const renderInput = (params: any) => {
     const { InputProps, disabled, fullWidth, id, inputProps: autocompleteInputProps } = params;
+
+    if (isMobile) {
+      InputProps.startAdornment = <Button icon={ICONS.STICKER} onClick={handleEmojis} />;
+      InputProps.endAdornment = (
+        <>
+          <Button icon={ICONS.LBC} onClick={() => handleTip(true)} />
+          <Button icon={ICONS.FINANCE} onClick={() => handleTip(false)} />
+
+          {messageValue && messageValue.length > 0 && (
+            <Button button="primary" icon={ICONS.SUBMIT} iconColor="red" onClick={() => handleSubmit()} />
+          )}
+        </>
+      );
+    }
+
     const inputProps = { ...autocompleteInputProps, ...inputDefaultProps };
     const autocompleteProps = { InputProps, disabled, fullWidth, id, inputProps };
 
-    return <TextField inputRef={inputRef} multiline select={false} {...autocompleteProps} />;
+    return !isMobile ? (
+      <TextField inputRef={inputRef} multiline select={false} {...autocompleteProps} />
+    ) : (
+      <TextField inputRef={inputRef} variant="outlined" multiline minRows={1} select={false} {...autocompleteProps} />
+    );
   };
 
   const renderOption = (optionProps: any, label: string) => {

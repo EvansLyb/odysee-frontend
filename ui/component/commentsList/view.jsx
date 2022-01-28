@@ -3,6 +3,7 @@ import { COMMENT_PAGE_SIZE_TOP_LEVEL, SORT_BY } from 'constants/comment';
 import { ENABLE_COMMENT_REACTIONS } from 'config';
 import { getChannelIdFromClaim } from 'util/claim';
 import { useIsMobile, useIsMediumScreen } from 'effects/use-screensize';
+import { getCommentsListTitle } from 'util/comments';
 import * as ICONS from 'constants/icons';
 import * as REACTION_TYPES from 'constants/reactions';
 import Button from 'component/button';
@@ -84,13 +85,13 @@ function CommentList(props: Props) {
 
   const isMobile = useIsMobile();
   const isMediumScreen = useIsMediumScreen();
-  const desktopView = !isMobile && !isMediumScreen;
+
   const spinnerRef = React.useRef();
   const DEFAULT_SORT = ENABLE_COMMENT_REACTIONS ? SORT_BY.POPULARITY : SORT_BY.NEWEST;
   const [sort, setSort] = usePersistedState('comment-sort-by', DEFAULT_SORT);
   const [page, setPage] = React.useState(0);
   const [commentsToDisplay, setCommentsToDisplay] = React.useState(topLevelComments);
-  const hasDefaultExpansion = commentsAreExpanded || desktopView;
+  const hasDefaultExpansion = commentsAreExpanded || !isMediumScreen || isMobile;
   const [expandedComments, setExpandedComments] = React.useState(hasDefaultExpansion);
   const totalFetchedComments = allCommentIds ? allCommentIds.length : 0;
   const channelId = getChannelIdFromClaim(claim);
@@ -99,6 +100,7 @@ function CommentList(props: Props) {
   const isResolvingComments = topLevelComments && resolvedComments.length !== topLevelComments.length;
   const alreadyResolved = !isResolvingComments && resolvedComments.length !== 0;
   const canDisplayComments = commentsToDisplay && commentsToDisplay.length === topLevelComments.length;
+  const title = getCommentsListTitle(totalComments);
 
   // Display comments immediately if not fetching reactions
   // If not, wait to show comments until reactions are fetched
@@ -283,11 +285,7 @@ function CommentList(props: Props) {
   return (
     <Card
       className="card--enable-overflow"
-      title={
-        (totalComments === 0 && __('Leave a comment')) ||
-        (totalComments === 1 && __('1 comment')) ||
-        __('%total_comments% comments', { total_comments: totalComments })
-      }
+      title={!isMobile && title}
       titleActions={
         <>
           {totalComments > 1 && ENABLE_COMMENT_REACTIONS && (
@@ -310,8 +308,8 @@ function CommentList(props: Props) {
 
           <ul
             className={classnames({
-              comments: desktopView || expandedComments,
-              'comments--contracted': !desktopView && !expandedComments,
+              comments: !isMediumScreen || expandedComments,
+              'comments--contracted': isMediumScreen && !expandedComments,
             })}
           >
             {readyToDisplayComments && pinnedComments && getCommentElems(pinnedComments)}

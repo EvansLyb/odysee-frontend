@@ -108,3 +108,17 @@ export function getChannelFromClaim(claim: ?Claim) {
     ? claim.signing_channel
     : null;
 }
+
+export function getClaimMetadata(claim: ?Claim) {
+  const metadata = claim && claim.value;
+  return metadata || (claim === undefined ? undefined : null);
+}
+
+export function getClaimTitle(claim: ?Claim) {
+  const metadata = getClaimMetadata(claim);
+  return metadata && metadata.title;
+}
+
+export const isStreamPlaceholderClaim = (claim: ?StreamClaim) => {
+  return claim ? Boolean(claim.value_type === 'stream' && !claim.value.source) : false;
+};

@@ -26,10 +26,12 @@ type Props = {
   claim: StreamClaim,
   myChannelIds: ?Array<string>,
   stakedLevel: number,
+  isMobile?: boolean,
+  handleDismissPin?: () => void,
 };
 
 export default function LivestreamComment(props: Props) {
-  const { comment, forceUpdate, uri, claim, myChannelIds, stakedLevel } = props;
+  const { comment, forceUpdate, uri, claim, myChannelIds, stakedLevel, isMobile, handleDismissPin } = props;
 
   const {
     channel_url: authorUri,
@@ -64,6 +66,7 @@ export default function LivestreamComment(props: Props) {
         'livestream__comment--superchat': supportAmount > 0,
         'livestream__comment--sticker': isSticker,
         'livestream__comment--mentioned': hasUserMention,
+        'livestream__comment--mobile': isMobile,
       })}
     >
       {supportAmount > 0 && (
@@ -137,6 +140,7 @@ export default function LivestreamComment(props: Props) {
             disableEdit
             disableRemove={comment.removed}
             isLiveComment
+            handleDismissPin={handleDismissPin}
           />
         </Menu>
       </div>

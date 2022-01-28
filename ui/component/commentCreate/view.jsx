@@ -12,6 +12,7 @@ import { useHistory } from 'react-router';
 import * as ICONS from 'constants/icons';
 import * as KEYCODES from 'constants/keycodes';
 import * as PAGES from 'constants/pages';
+import * as MODALS from 'constants/modal_types';
 import Button from 'component/button';
 import ChannelThumbnail from 'component/channelThumbnail';
 import classnames from 'classnames';
@@ -29,6 +30,7 @@ import type { ElementRef } from 'react';
 import UriIndicator from 'component/uriIndicator';
 import usePersistedState from 'effects/use-persisted-state';
 import WalletTipAmountSelector from 'component/walletTipAmountSelector';
+import { useIsMobile } from 'effects/use-screensize';
 
 import { getStripeEnvironment } from 'util/stripe';
 const stripeEnvironment = getStripeEnvironment();
@@ -67,6 +69,7 @@ type Props = {
   sendTip: ({}, (any) => void, (any) => void) => void,
   setQuickReply: (any) => void,
   toast: (string) => void,
+  doOpenModal: (id: string, any) => void,
 };
 
 export function CommentCreate(props: Props) {
@@ -85,6 +88,7 @@ export function CommentCreate(props: Props) {
     settingsByChannelId,
     shouldFetchComment,
     supportDisabled,
+    uri,
     disableInput,
     createComment,
     doFetchCreatorSettings,
@@ -95,7 +99,10 @@ export function CommentCreate(props: Props) {
     sendCashTip,
     sendTip,
     setQuickReply,
+    doOpenModal,
   } = props;
+
+  const isMobile = useIsMobile();
 
   const formFieldRef: ElementRef<any> = React.useRef();
   const buttonRef: ElementRef<any> = React.useRef();
@@ -377,9 +384,13 @@ export function CommentCreate(props: Props) {
   // Render
   // **************************************************************************
 
-  const getActionButton = (title: string, label?: string, icon: string, handleClick: () => void) => (
-    <Button title={title} label={label} button="alt" icon={icon} onClick={handleClick} />
-  );
+  const getActionButton = (
+    title: string,
+    label?: string,
+    icon: string,
+    handleClick: () => void,
+    disabled?: boolean
+  ) => <Button title={title} label={label} button="alt" icon={icon} onClick={handleClick} disabled={disabled} />;
 
   if (channelSettings && !channelSettings.comments_enabled) {
     return <Empty padded text={__('This channel has disabled comments on their page.')} />;
@@ -483,6 +494,19 @@ export function CommentCreate(props: Props) {
             name={isReply ? 'create__reply' : 'create__comment'}
             onChange={(e) => setCommentValue(SIMPLE_SITE || !advancedEditor || isReply ? e.target.value : e)}
             openEmoteMenu={() => setShowEmotes(!showEmotes)}
+            handleTip={(isLBC) =>
+              doOpenModal(MODALS.SEND_TIP, {
+                uri,
+                isTipOnly: true,
+                hasSelectedTab: isLBC ? TAB_LBC : TAB_FIAT,
+                setAmount: (amount) => {
+                  setTipAmount(amount);
+                  setReviewingSupportComment(true);
+                },
+              })
+            }
+            handleSubmit={handleCreateComment}
+            noEmojis={isMobile}
             placeholder={__('Say something about this...')}
             quickActionHandler={!SIMPLE_SITE ? () => setAdvancedEditor(!advancedEditor) : undefined}
             quickActionLabel={
@@ -492,6 +516,7 @@ export function CommentCreate(props: Props) {
             textAreaMaxLength={isLivestream ? FF_MAX_CHARS_IN_LIVESTREAM_COMMENT : FF_MAX_CHARS_IN_COMMENT}
             type={!SIMPLE_SITE && advancedEditor && !isReply ? 'markdown' : 'textarea'}
             value={commentValue}
+            uri={uri}
           />
         </>
       )}
@@ -514,167 +539,197 @@ export function CommentCreate(props: Props) {
       )}
 
       {/* Bottom Action Buttons */}
-      <div className="section__actions section__actions--no-margin">
-        {/* Submit Button */}
-        {isReviewingSupportComment ? (
-          <Button
-            autoFocus
-            button="primary"
-            disabled={disabled || !minAmountMet}
-            label={
-              isSubmitting
-                ? __('Sending...')
-                : commentFailure && tipAmount === successTip.tipAmount
-                ? __('Re-submit')
-                : __('Send')
-            }
-            onClick={handleSupportComment}
-          />
-        ) : isReviewingStickerComment && selectedSticker ? (
-          <Button
-            button="primary"
-            label={__('Send')}
-            disabled={(isSupportComment && (tipError || disableReviewButton)) || disableInput}
-            onClick={() => {
-              if (isSupportComment) {
-                handleSupportComment();
-              } else {
-                handleCreateComment();
-              }
-              setSelectedSticker(null);
-              setReviewingStickerComment(false);
-              setStickerSelector(false);
-              setIsSupportComment(false);
-            }}
-          />
-        ) : isSupportComment ? (
-          <Button
-            disabled={disabled || tipError || disableReviewButton || !minAmountMet}
-            type="button"
-            button="primary"
-            icon={activeTab === TAB_LBC ? ICONS.LBC : ICONS.FINANCE}
-            label={__('Review')}
-            onClick={() => setReviewingSupportComment(true)}
-            requiresAuth
-          />
-        ) : (
-          (!minTip || claimIsMine) && (
+      {!isMobile && (
+        <div className="section__actions section__actions--no-margin">
+          {/* Submit Button */}
+          {isReviewingSupportComment ? (
             <Button
-              ref={buttonRef}
+              autoFocus
               button="primary"
-              disabled={disabled || stickerSelector}
-              type="submit"
+              disabled={disabled || !minAmountMet}
               label={
-                isReply
-                  ? isSubmitting
-                    ? __('Replying...')
-                    : __('Reply')
-                  : isSubmitting
-                  ? __('Commenting...')
-                  : __('Comment --[button to submit something]--')
+                isSubmitting
+                  ? __('Sending...')
+                  : commentFailure && tipAmount === successTip.tipAmount
+                  ? __('Re-submit')
+                  : __('Send')
               }
-              requiresAuth
-              onClick={() => activeChannelClaim && commentValue.length && handleCreateComment()}
+              onClick={handleSupportComment}
             />
-          )
-        )}
-
-        {/** Stickers/Support Buttons **/}
-        {!supportDisabled && !stickerSelector && (
-          <>
-            {getActionButton(
-              __('Stickers'),
-              isReviewingStickerComment ? __('Different Sticker') : undefined,
-              ICONS.STICKER,
-              () => {
-                if (isReviewingStickerComment) setReviewingStickerComment(false);
+          ) : isReviewingStickerComment && selectedSticker ? (
+            <Button
+              button="primary"
+              label={__('Send')}
+              disabled={(isSupportComment && (tipError || disableReviewButton)) || disableInput}
+              onClick={() => {
+                if (isSupportComment) {
+                  handleSupportComment();
+                } else {
+                  handleCreateComment();
+                }
+                setSelectedSticker(null);
+                setReviewingStickerComment(false);
+                setStickerSelector(false);
                 setIsSupportComment(false);
-                setStickerSelector(true);
-              }
-            )}
+              }}
+            />
+          ) : isSupportComment ? (
+            <Button
+              disabled={disabled || tipError || disableReviewButton || !minAmountMet}
+              type="button"
+              button="primary"
+              icon={activeTab === TAB_LBC ? ICONS.LBC : ICONS.FINANCE}
+              label={__('Review')}
+              onClick={() => setReviewingSupportComment(true)}
+              requiresAuth
+            />
+          ) : (
+            (!minTip || claimIsMine) && (
+              <Button
+                ref={buttonRef}
+                button="primary"
+                disabled={disabled || stickerSelector}
+                type="submit"
+                label={
+                  isReply
+                    ? isSubmitting
+                      ? __('Replying...')
+                      : __('Reply')
+                    : isSubmitting
+                    ? __('Commenting...')
+                    : __('Comment --[button to submit something]--')
+                }
+                requiresAuth
+                onClick={() => activeChannelClaim && commentValue.length && handleCreateComment()}
+              />
+            )
+          )}
 
-            {!claimIsMine && (
-              <>
-                {(!isSupportComment || activeTab !== TAB_LBC) &&
-                  getActionButton(
-                    __('Credits'),
-                    isSupportComment ? __('Switch to Credits') : undefined,
-                    ICONS.LBC,
-                    () => {
-                      setIsSupportComment(true);
-                      setActiveTab(TAB_LBC);
-                    }
-                  )}
+          {/** Stickers/Support Buttons **/}
+          {!supportDisabled && !stickerSelector && (
+            <>
+              {getActionButton(
+                __('Stickers'),
+                isReviewingStickerComment ? __('Different Sticker') : undefined,
+                ICONS.STICKER,
+                () => {
+                  if (isReviewingStickerComment) setReviewingStickerComment(false);
+                  setIsSupportComment(false);
+                  setStickerSelector(true);
+                }
+              )}
 
-                {stripeEnvironment &&
-                  (!isSupportComment || activeTab !== TAB_FIAT) &&
-                  getActionButton(
-                    __('Cash'),
-                    isSupportComment ? __('Switch to Cash') : undefined,
-                    ICONS.FINANCE,
-                    () => {
-                      setIsSupportComment(true);
-                      setActiveTab(TAB_FIAT);
-                    }
-                  )}
-              </>
-            )}
-          </>
-        )}
+              {!claimIsMine && (
+                <>
+                  {(!isSupportComment || activeTab !== TAB_LBC) &&
+                    getActionButton(
+                      __('Credits'),
+                      isSupportComment ? __('Switch to Credits') : undefined,
+                      ICONS.LBC,
+                      () => {
+                        setActiveTab(TAB_LBC);
 
-        {/* Cancel Button */}
-        {(isSupportComment ||
-          isReviewingSupportComment ||
-          stickerSelector ||
-          isReviewingStickerComment ||
-          (isReply && !minTip)) && (
-          <Button
-            disabled={isSupportComment && isSubmitting}
-            button="link"
-            label={__('Cancel')}
-            onClick={() => {
-              if (isSupportComment || isReviewingSupportComment) {
-                if (!isReviewingSupportComment) setIsSupportComment(false);
-                setReviewingSupportComment(false);
-                if (stickerPrice) {
+                        if (isMobile) {
+                          doOpenModal(MODALS.SEND_TIP, {
+                            uri,
+                            isTipOnly: true,
+                            hasSelectedTab: TAB_LBC,
+                            setAmount: (amount) => {
+                              setTipAmount(amount);
+                              setReviewingSupportComment(true);
+                            },
+                          });
+                        } else {
+                          setIsSupportComment(true);
+                        }
+                      },
+                      !commentValue.length
+                    )}
+
+                  {stripeEnvironment &&
+                    (!isSupportComment || activeTab !== TAB_FIAT) &&
+                    getActionButton(
+                      __('Cash'),
+                      isSupportComment ? __('Switch to Cash') : undefined,
+                      ICONS.FINANCE,
+                      () => {
+                        setActiveTab(TAB_FIAT);
+
+                        if (isMobile) {
+                          doOpenModal(MODALS.SEND_TIP, {
+                            uri,
+                            isTipOnly: true,
+                            hasSelectedTab: TAB_FIAT,
+                            setAmount: (amount) => {
+                              setTipAmount(amount);
+                              setReviewingSupportComment(true);
+                            },
+                          });
+                        } else {
+                          setIsSupportComment(true);
+                        }
+                      },
+                      !commentValue.length
+                    )}
+                </>
+              )}
+            </>
+          )}
+
+          {/* Cancel Button */}
+          {(isSupportComment ||
+            isReviewingSupportComment ||
+            stickerSelector ||
+            isReviewingStickerComment ||
+            (isReply && !minTip)) && (
+            <Button
+              disabled={isSupportComment && isSubmitting}
+              button="link"
+              label={__('Cancel')}
+              onClick={() => {
+                if (isSupportComment || isReviewingSupportComment) {
+                  if (!isReviewingSupportComment) setIsSupportComment(false);
+                  setReviewingSupportComment(false);
+                  if (stickerPrice) {
+                    setReviewingStickerComment(false);
+                    setStickerSelector(false);
+                    setSelectedSticker(null);
+                  }
+                } else if (stickerSelector || isReviewingStickerComment) {
                   setReviewingStickerComment(false);
                   setStickerSelector(false);
                   setSelectedSticker(null);
+                } else if (isReply && !minTip && onCancelReplying) {
+                  onCancelReplying();
                 }
-              } else if (stickerSelector || isReviewingStickerComment) {
-                setReviewingStickerComment(false);
-                setStickerSelector(false);
-                setSelectedSticker(null);
-              } else if (isReply && !minTip && onCancelReplying) {
-                onCancelReplying();
-              }
-            }}
-          />
-        )}
-
-        {/* Help Text */}
-        {deletedComment && <div className="error__text">{__('This comment has been deleted.')}</div>}
-        {!!minAmount && (
-          <div className="help--notice commentCreate__minAmountNotice">
-            <I18nMessage tokens={{ lbc: <CreditAmount noFormat amount={minAmount} /> }}>
-              {minTip ? 'Comment min: %lbc%' : minSuper ? 'HyperChat min: %lbc%' : ''}
-            </I18nMessage>
-            <Icon
-              customTooltipText={
-                minTip
-                  ? __('This channel requires a minimum tip for each comment.')
-                  : minSuper
-                  ? __('This channel requires a minimum amount for HyperChats to be visible.')
-                  : ''
-              }
-              className="icon--help"
-              icon={ICONS.HELP}
-              tooltip
-              size={16}
+              }}
             />
-          </div>
-        )}
-      </div>
+          )}
+
+          {/* Help Text */}
+          {deletedComment && <div className="error__text">{__('This comment has been deleted.')}</div>}
+          {!!minAmount && (
+            <div className="help--notice commentCreate__minAmountNotice">
+              <I18nMessage tokens={{ lbc: <CreditAmount noFormat amount={minAmount} /> }}>
+                {minTip ? 'Comment min: %lbc%' : minSuper ? 'HyperChat min: %lbc%' : ''}
+              </I18nMessage>
+              <Icon
+                customTooltipText={
+                  minTip
+                    ? __('This channel requires a minimum tip for each comment.')
+                    : minSuper
+                    ? __('This channel requires a minimum amount for HyperChats to be visible.')
+                    : ''
+                }
+                className="icon--help"
+                icon={ICONS.HELP}
+                tooltip
+                size={16}
+              />
+            </div>
+          )}
+        </div>
+      )}
     </Form>
   );
 }

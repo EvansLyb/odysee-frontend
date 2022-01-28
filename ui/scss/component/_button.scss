@@ -314,6 +314,10 @@
   }
 }
 
+.button--file-action--menu {
+  @extend .button--file-action;
+}
+
 .button--fire {
   color: var(--color-fire);
   position: relative;
@@ -751,4 +755,8 @@ svg + .button__label {
 
 .button--hash-id {
   @include font-mono;
+}
+
+.file-reaction__tooltip-inner {
+  margin: 0px !important;
 }
