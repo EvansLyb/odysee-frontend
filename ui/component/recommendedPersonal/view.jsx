@@ -21,14 +21,21 @@ type SectionHeaderProps = {
   help?: string,
 };
 
-const SectionHeader = ({ title, navigate = '/', icon = '', help }: SectionHeaderProps) => {
+const HELP_FYP_IS_EXPERIMENTAL = 'This is feature is currently experimental.';
+
+const SectionHeader = ({ title, icon = '', help }: SectionHeaderProps) => {
   return (
-    <h1 className="claim-grid__header">
-      <Button navigate={navigate} button="link">
-        <Icon className="claim-grid__header-icon" sectionIcon icon={icon} size={20} />
-        <span className="claim-grid__title">{title}</span>
-        {help}
-      </Button>
+    <h1 className="claim-grid__header claim-grid__header--fyp">
+      <Icon className="claim-grid__header-icon" sectionIcon icon={icon} size={20} />
+      <span className="claim-grid__title">{title}</span>
+      {help}
+      <Icon
+        customTooltipText={__(HELP_FYP_IS_EXPERIMENTAL)}
+        className="icon--help"
+        icon={ICONS.HELP}
+        tooltip
+        size={16}
+      />
     </h1>
   );
 };
