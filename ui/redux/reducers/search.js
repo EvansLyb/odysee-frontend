@@ -77,15 +77,13 @@ export default handleActions(
     }),
 
     [ACTIONS.FYP_FETCH_SUCCESS]: (state: SearchState, action: any): SearchState => {
-      return state.personalRecommendations.gid === action.data.gid
-        ? state
-        : {
-            ...state,
-            personalRecommendations: {
-              gid: action.data.gid,
-              uris: action.data.uris,
-            },
-          };
+      return {
+        ...state,
+        personalRecommendations: {
+          gid: action.data.gid,
+          uris: action.data.uris,
+        },
+      };
     },
 
     [ACTIONS.FYP_FETCH_FAILED]: (state: SearchState, action: any): SearchState => ({
